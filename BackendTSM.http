@@ -1,0 +1,6 @@
+@BackendTSM_HostAddress = http://localhost:5051
+
+GET {{BackendTSM_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
