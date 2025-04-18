@@ -1,41 +1,33 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.EntityFrameworkCore;
+using BackendTSM.Models; // อย่าลืมเปลี่ยน namespace ให้ตรงกับ DbContext ของคุณ
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSwaggerGen(); // ✅ แก้ปัญหา ISwaggerProvider
+builder.Services.AddEndpointsApiExplorer(); // ✅ ใช้ร่วมกับ Swagger UI
+
+// ➕ Register DbContext
+builder.Services.AddDbContext<TsmDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ➕ Register Controllers
+builder.Services.AddControllers();
+
+// ➕ OpenAPI (Swagger)
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ➕ Swagger UI เฉพาะตอน dev
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();       // สำหรับ dotnet openapi tools
+    app.UseSwagger();       // Swagger JSON
+    app.UseSwaggerUI();     // Swagger UI หน้าเว็บ
 }
 
+// ➕ Map routing
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();       // สำคัญ! เพื่อให้ controller เช่น UsersController ทำงานได้
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
